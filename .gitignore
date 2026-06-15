@@ -1,0 +1,6 @@
+env/
+__pycache__/
+tests/__pycache__/
+pipeline_autid.log
+test_ids
+.env
