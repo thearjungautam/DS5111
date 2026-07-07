@@ -69,7 +69,7 @@ def main():
             sys.stdout.write(json.dumps(payload) + "\n")
             sys.stdout.flush()
 
-        except Exception as error:
+        except (RuntimeError, ValueError, KeyError, TypeError) as error:
             logging.error(
                 "Failed to fetch YouTube transcript for %s: %s",
                 video_id,

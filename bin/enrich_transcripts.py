@@ -17,7 +17,6 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
-# TODO 1: Fast fail if API key missing
 api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
@@ -26,7 +25,6 @@ if not api_key:
 
 client = genai.Client(api_key=api_key)
 
-# TODO 2: Schema contract
 response_schema = {
     "type": "object",
     "properties": {
@@ -52,10 +50,7 @@ response_schema = {
 
 def main():
     """Read transcript rows from stdin and enrich them."""
-
     for line in sys.stdin:
-
-        # TODO 3: Safe stream deserialization
         try:
             row = json.loads(line)
         except json.JSONDecodeError:
@@ -96,7 +91,6 @@ Transcript:
 
         enriched["video_id"] = video_id
 
-        # TODO 4: Stream output immediately
         sys.stdout.write(json.dumps(enriched) + "\n")
         sys.stdout.flush()
 

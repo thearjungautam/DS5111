@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-function-docstring,too-few-public-methods,unused-argument,import-outside-toplevel,unused-import
 """Tests for transcript enrichment pipeline."""
 
 import io
