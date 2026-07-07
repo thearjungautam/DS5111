@@ -1,26 +1,23 @@
-# pylint: disable=missing-module-docstring,missing-function-docstring,too-few-public-methods,unused-argument,import-outside-toplevel,unused-import
-"""Tests for transcript enrichment pipeline."""
+# pylint: disable=missing-module-docstring,missing-function-docstring,too-few-public-methods,unused-argument
 
 import io
 import json
 import sys
 
-from bin.enrich_transcripts import main
+from bin import enrich_transcripts
 
 
 class MockGeminiResponse:
     """Mock Gemini response object."""
 
     def __init__(self, text_payload):
-        """Store mock response text."""
         self.text = text_payload
 
 
-def test_enrich_transcripts_streaming_pipeline(monkeypatch, capsys):
-    """Verify enrichment pipeline without making live API calls."""
+class MockModels:
+    """Mock Gemini models service."""
 
-    def mock_generate_content(self, model, contents, config=None):
-        """Return schema-compliant mock Gemini response."""
+    def generate_content(self, model, contents, config=None):
         mock_data = {
             "video_id": "ds5111_v001",
             "cleaned_text": "Welcome to class. Today we are testing mock frameworks.",
@@ -30,9 +27,17 @@ def test_enrich_transcripts_streaming_pipeline(monkeypatch, capsys):
 
         return MockGeminiResponse(json.dumps(mock_data))
 
-    from google.genai.models import Models
 
-    monkeypatch.setattr(Models, "generate_content", mock_generate_content)
+class MockClient:
+    """Mock Gemini client."""
+
+    def __init__(self):
+        self.models = MockModels()
+
+
+def test_enrich_transcripts_streaming_pipeline(monkeypatch, capsys):
+    """Verify enrichment pipeline without making live API calls."""
+    monkeypatch.setattr(enrich_transcripts, "create_client", MockClient)
 
     mock_input_row = {
         "video_id": "ds5111_v001",
@@ -42,7 +47,7 @@ def test_enrich_transcripts_streaming_pipeline(monkeypatch, capsys):
     mock_stdin = io.StringIO(json.dumps(mock_input_row) + "\n")
     monkeypatch.setattr(sys, "stdin", mock_stdin)
 
-    main()
+    enrich_transcripts.main()
 
     captured = capsys.readouterr()
     stdout_lines = captured.out.strip().split("\n")
@@ -57,11 +62,12 @@ def test_enrich_transcripts_streaming_pipeline(monkeypatch, capsys):
 
 def test_enrich_transcripts_skips_bad_json(monkeypatch, capsys):
     """Verify malformed JSON input is skipped safely."""
+    monkeypatch.setattr(enrich_transcripts, "create_client", MockClient)
 
     mock_stdin = io.StringIO("not valid json\n")
     monkeypatch.setattr(sys, "stdin", mock_stdin)
 
-    main()
+    enrich_transcripts.main()
 
     captured = capsys.readouterr()
 
