@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import sys
+from abc import ABC, abstractmethod
 
 from dotenv import load_dotenv
 from google import genai
@@ -16,6 +17,85 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
+
+class TranscriptEnricher(ABC):
+    """Abstract contract for transcript enrichment strategies."""
+
+    @abstractmethod
+    def enrich(self, video_id: str, raw_text: str) -> dict:
+        """Return structured enrichment data for a transcript."""
+        raise NotImplementedError
+
+
+class GeminiEnricher(TranscriptEnricher):
+    """Gemini implementation of the transcript enrichment strategy."""
+
+    response_schema = {
+        "type": "object",
+        "properties": {
+            "video_id": {"type": "string"},
+            "cleaned_text": {"type": "string"},
+            "tech_terms": {
+                "type": "array",
+                "items": {"type": "string"},
+            },
+            "book_names": {
+                "type": "array",
+                "items": {"type": "string"},
+            },
+        },
+        "required": [
+            "video_id",
+            "cleaned_text",
+            "tech_terms",
+            "book_names",
+        ],
+    }
+
+
+
+
+
+    def __init__(self, api_key: str, model: str = "gemini-2.5-flash"):
+        self.api_key = api_key
+        self.model = model
+
+    def enrich(self, video_id: str, raw_text: str) -> dict:
+        """Enrich a transcript using Gemini and return structured data."""
+        try:
+            client = genai.Client(api_key=self.api_key)
+
+            prompt = f"""
+Clean the transcript text.
+
+Return:
+- cleaned_text
+- tech_terms
+- book_names
+
+video_id: {video_id}
+
+Transcript:
+{raw_text}
+"""
+
+            response = client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=self.response_schema,
+                ),
+            )
+
+            return json.loads(response.text)
+
+        except Exception as error:
+            raise RuntimeError(
+                f"Gemini enrichment failed for {video_id}: {error}"
+            ) from error
+
+
 
 # TODO 1: Fast fail if API key missing
 api_key = os.getenv("GEMINI_API_KEY")
