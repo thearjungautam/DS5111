@@ -96,6 +96,39 @@ Transcript:
             ) from error
 
 
+class EnrichmentEngine:
+    """Pipeline engine that delegates transcript enrichment to a strategy."""
+
+    def __init__(self, strategy: TranscriptEnricher):
+        self.strategy = strategy
+
+    def run_stream(self):
+        """Process transcript JSONL records from stdin and emit enriched JSONL."""
+        for line in sys.stdin:
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                logging.error("Malformed JSON input row.")
+                continue
+
+            video_id = row.get("video_id")
+            raw_text = row.get("raw_text")
+
+            try:
+                enriched = self.strategy.enrich(video_id, raw_text)
+            except RuntimeError as error:
+                logging.error(
+                    "Failed to enrich transcript for %s: %s",
+                    video_id,
+                    error,
+                )
+                continue
+
+            enriched["video_id"] = video_id
+
+            sys.stdout.write(json.dumps(enriched) + "\n")
+            sys.stdout.flush()
+
 
 # TODO 1: Fast fail if API key missing
 api_key = os.getenv("GEMINI_API_KEY")
