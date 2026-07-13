@@ -40,8 +40,8 @@ def test_enrich_transcripts_streaming_pipeline(monkeypatch, capsys):
 
     mock_stdin = io.StringIO(json.dumps(mock_input_row) + "\n")
     monkeypatch.setattr(sys, "stdin", mock_stdin)
-
-    main()
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    main(["--strategy", "gemini"])
 
     captured = capsys.readouterr()
     stdout_lines = captured.out.strip().split("\n")
@@ -59,9 +59,35 @@ def test_enrich_transcripts_skips_bad_json(monkeypatch, capsys):
 
     mock_stdin = io.StringIO("not valid json\n")
     monkeypatch.setattr(sys, "stdin", mock_stdin)
-
-    main()
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    main(["--strategy", "gemini"])
 
     captured = capsys.readouterr()
 
     assert captured.out == ""
+
+
+def test_mock_claude_strategy_pipeline(monkeypatch, capsys):
+    """Verify the Claude mock strategy works without credentials or network calls."""
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    mock_input_row = {
+        "video_id": "claude_test_001",
+        "raw_text": "This row should pass through the mock Claude strategy.",
+    }
+
+    mock_stdin = io.StringIO(json.dumps(mock_input_row) + "\n")
+    monkeypatch.setattr(sys, "stdin", mock_stdin)
+
+    main(["--strategy", "claude"])
+
+    captured = capsys.readouterr()
+    stdout_lines = captured.out.strip().split("\n")
+
+    assert len(stdout_lines) == 1
+
+    parsed_output = json.loads(stdout_lines[0])
+
+    assert parsed_output["video_id"] == "claude_test_001"
+    assert "mock enrichment" in parsed_output["tech_terms"]
+    assert parsed_output["cleaned_text"] == mock_input_row["raw_text"]
