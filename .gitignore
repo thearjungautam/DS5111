@@ -7,3 +7,4 @@ test_ids
 .env
 __pycache__/
 env/
+pipeline/logs/
