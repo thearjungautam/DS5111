@@ -14,6 +14,7 @@ test: lint
 	. env/bin/activate; pytest -vv tests
 test_enrich:
 	@. env/bin/activate && cat mock_transcripts.jsonl | python -u bin/enrich_transcripts.py | python bin/validate_schema.py
+
 .PHONY: load
 load:
 	@echo "Initiating Cloud Data Warehouse Synchronizer Node..."
