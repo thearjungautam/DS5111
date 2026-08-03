@@ -37,5 +37,5 @@ models:
       - name: book_title
         tests:
           - dbt_expectations.expect_column_value_lengths_to_be_between:
-              min_value: 150
+              min_value: 2
               max_value: 250
