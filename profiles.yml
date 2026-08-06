@@ -1,0 +1,11 @@
+default:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "native_execution"
+      user: "native_execution"
+      role: DS5111_STUDENT_ROLE
+      database: DS5111_DB
+      schema: CMM4YJ
+      warehouse: DS5111_WH
